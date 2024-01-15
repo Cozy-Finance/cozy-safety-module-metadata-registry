@@ -17,10 +17,6 @@ quote_style = "double"
 single_line_statement_blocks = "single"
 tab_width = 2
 wrap_comments = true
-ignore = [
-  "src/lib/ERC20.sol",
-  "src/lib/PackedStringLib.sol",
-  "src/lib/SafeERC20.sol"
-]
+ignore = []
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
