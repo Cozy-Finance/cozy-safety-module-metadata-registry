@@ -65,8 +65,8 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
     );
 
     address[] memory _safetyModules = new address[](2);
-    _safetyModules[0] = makeAddr("set0");
-    _safetyModules[1] = makeAddr("set1");
+    _safetyModules[0] = makeAddr("sm0");
+    _safetyModules[1] = makeAddr("sm1");
 
     // Mock safetyModule.owner responses.
     vm.mockCall(_safetyModules[0], abi.encodeWithSelector(ISafetyModule.owner.selector), abi.encode(localOwner));
@@ -90,7 +90,7 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
     MetadataRegistry.SafetyModuleMetadata[] memory _metadata = new MetadataRegistry.SafetyModuleMetadata[](1);
     _metadata[0] = MetadataRegistry.SafetyModuleMetadata(_name, _description, _logo);
     address[] memory _safetyModules = new address[](1);
-    _safetyModules[0] = makeAddr("set0");
+    _safetyModules[0] = makeAddr("sm0");
     vm.mockCall(
       _safetyModules[0], abi.encodeWithSelector(ISafetyModule.owner.selector), abi.encode(makeAddr("randomAddr"))
     );
