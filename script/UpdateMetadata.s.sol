@@ -29,17 +29,18 @@ contract UpdateMetadata is Script {
     safetyModules_[1] = 0x0000000000000000000000000000000000000000;
 
     // This array should map 1:1 with the sets_ array.
-    MetadataRegistry.SafetyModuleMetadata[] memory safetyModuleMetadata_ =
-      new MetadataRegistry.SafetyModuleMetadata[](2);
-    safetyModuleMetadata_[0] = MetadataRegistry.SafetyModuleMetadata(
+    MetadataRegistry.Metadata[] memory safetyModuleMetadata_ = new MetadataRegistry.Metadata[](2);
+    safetyModuleMetadata_[0] = MetadataRegistry.Metadata(
       "Mock Safety Module A",
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque ac semper lectus. Ut vitae scelerisque metus.",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Ethereum_logo_2014.svg/628px-Ethereum_logo_2014.svg.png"
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Ethereum_logo_2014.svg/628px-Ethereum_logo_2014.svg.png",
+      ""
     );
-    safetyModuleMetadata_[1] = MetadataRegistry.SafetyModuleMetadata(
+    safetyModuleMetadata_[1] = MetadataRegistry.Metadata(
       "Mock Safety Module B",
       "In ac ipsum ex. Duis sagittis nibh ac volutpat venenatis. In dignissim elit et consequat ullamcorper.",
-      "https://cryptologos.cc/logos/usd-coin-usdc-logo.png"
+      "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
+      ""
     );
 
     // -------- Trigger Metadata --------
@@ -49,11 +50,11 @@ contract UpdateMetadata is Script {
     triggers_[1] = 0x0000000000000000000000000000000000000000;
 
     // This array should map 1:1 with the triggers_ array.
-    MetadataRegistry.TriggerMetadata[] memory triggerMetadata_ = new MetadataRegistry.TriggerMetadata[](2);
-    triggerMetadata_[0] = MetadataRegistry.TriggerMetadata(
+    MetadataRegistry.Metadata[] memory triggerMetadata_ = new MetadataRegistry.Metadata[](2);
+    triggerMetadata_[0] = MetadataRegistry.Metadata(
       "Mock Hop", "Bridge", "Mock Bridge Protection", "https://cryptologos.cc/logos/terra-luna-luna-logo.png"
     );
-    triggerMetadata_[1] = MetadataRegistry.TriggerMetadata(
+    triggerMetadata_[1] = MetadataRegistry.Metadata(
       "Mock Compound Finance",
       "Lending",
       "Mock Protocol Protection",

@@ -9,26 +9,18 @@ import {ISafetyModule} from "./interfaces/ISafetyModule.sol";
  * @dev Metadata can be fetched by querying logs or configuring a subgraph to index the events.
  */
 contract MetadataRegistry {
-  // Required metadata for a given safety module.
-  struct SafetyModuleMetadata {
-    string name; // Name of the safety module.
-    string description; // Description of the safety module.
-    string logoURI; // Path to a logo for the safety module.
-  }
-
-  // Required metadata for a given trigger.
-  struct TriggerMetadata {
-    string name; // Name of the trigger.
-    string category; // Category of the trigger.
-    string description; // Description of the trigger.
-    string logoURI; // Path to a logo for the trigger.
+  struct Metadata {
+    string name;
+    string description;
+    string logoURI;
+    string extraData;
   }
 
   /// @dev Emitted when a safety module's metadata is updated.
-  event SafetyModuleMetadataUpdated(address indexed safetyModule, SafetyModuleMetadata metadata);
+  event SafetyModuleMetadataUpdated(address indexed safetyModule, Metadata metadata);
 
   /// @dev Emitted when a trigger's metadata is updated.
-  event TriggerMetadataUpdated(address indexed trigger, TriggerMetadata metadata);
+  event TriggerMetadataUpdated(address indexed trigger, Metadata metadata);
 
   /// @dev Thrown when the caller is not authorized to perform the action.
   error Unauthorized();
@@ -39,9 +31,7 @@ contract MetadataRegistry {
   /// @notice Update metadata for safety modules.
   /// @param safetyModules_ An array of safety modules to be updated.
   /// @param metadata_ An array of new metadata, mapping 1:1 with the addresses in the safetyModules_ array.
-  function updateSafetyModuleMetadata(address[] calldata safetyModules_, SafetyModuleMetadata[] calldata metadata_)
-    external
-  {
+  function updateSafetyModuleMetadata(address[] calldata safetyModules_, Metadata[] calldata metadata_) external {
     if (safetyModules_.length != metadata_.length) revert InvalidConfiguration();
     for (uint256 i = 0; i < safetyModules_.length; i++) {
       updateSafetyModuleMetadata(safetyModules_[i], metadata_[i]);
@@ -51,7 +41,7 @@ contract MetadataRegistry {
   /// @notice Update metadata for a safety module.
   /// @param safetyModule_ The address of the safety module.
   /// @param metadata_ The new metadata for the safety module.
-  function updateSafetyModuleMetadata(address safetyModule_, SafetyModuleMetadata calldata metadata_) public {
+  function updateSafetyModuleMetadata(address safetyModule_, Metadata calldata metadata_) public {
     if (msg.sender != ISafetyModule(safetyModule_).owner()) revert Unauthorized();
     emit SafetyModuleMetadataUpdated(safetyModule_, metadata_);
   }
@@ -59,7 +49,7 @@ contract MetadataRegistry {
   /// @notice Update metadata for triggers.
   /// @param triggers_ An array of triggers to be updated.
   /// @param metadata_ An array of new metadata, mapping 1:1 with the addresses in the triggers_ array.
-  function updateTriggerMetadata(address[] calldata triggers_, TriggerMetadata[] calldata metadata_) external {
+  function updateTriggerMetadata(address[] calldata triggers_, Metadata[] calldata metadata_) external {
     if (triggers_.length != metadata_.length) revert InvalidConfiguration();
     for (uint256 i = 0; i < triggers_.length; i++) {
       updateTriggerMetadata(triggers_[i], metadata_[i]);
@@ -69,7 +59,7 @@ contract MetadataRegistry {
   /// @notice Update metadata for a trigger.
   /// @param trigger_ The address of the trigger.
   /// @param metadata_ The new metadata for the trigger.
-  function updateTriggerMetadata(address trigger_, TriggerMetadata calldata metadata_) public {
+  function updateTriggerMetadata(address trigger_, Metadata calldata metadata_) public {
     address boss_ = address(0);
     address owner_ = address(0);
 

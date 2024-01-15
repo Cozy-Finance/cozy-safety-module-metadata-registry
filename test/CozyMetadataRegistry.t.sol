@@ -16,8 +16,8 @@ contract MetadataRegistryTestSetup is Test {
   address triggerA;
   address triggerB;
 
-  event SafetyModuleMetadataUpdated(address indexed safetyModule, MetadataRegistry.SafetyModuleMetadata metadata);
-  event TriggerMetadataUpdated(address indexed trigger, MetadataRegistry.TriggerMetadata metadata);
+  event SafetyModuleMetadataUpdated(address indexed safetyModule, MetadataRegistry.Metadata metadata);
+  event TriggerMetadataUpdated(address indexed trigger, MetadataRegistry.Metadata metadata);
 
   function setUp() public {
     boss = makeAddr("boss");
@@ -49,19 +49,24 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
       congue hendrerit. Curabitur eu dui felis. Phasellus ut pulvinar erat. Proin nec nibh eu dolor cursus auctor. \
       Praesent in quam nec nisl posuere blandit. Suspendisse finibus nisi sit amet metus efficitur commodo. Vestibulum \
       ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae",
-      "https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_92x30dp.png"
+      "https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_92x30dp.png",
+      "$category: Category"
     );
   }
 
-  function testFuzz_UpdateSafetyModuleMetadata(string memory _name, string memory _description, string memory _logo)
-    public
-  {
-    MetadataRegistry.SafetyModuleMetadata[] memory _metadata = new MetadataRegistry.SafetyModuleMetadata[](2);
-    _metadata[0] = MetadataRegistry.SafetyModuleMetadata(_name, _description, _logo);
-    _metadata[1] = MetadataRegistry.SafetyModuleMetadata(
+  function testFuzz_UpdateSafetyModuleMetadata(
+    string memory _name,
+    string memory _description,
+    string memory _logo,
+    string memory _extraData
+  ) public {
+    MetadataRegistry.Metadata[] memory _metadata = new MetadataRegistry.Metadata[](2);
+    _metadata[0] = MetadataRegistry.Metadata(_name, _description, _logo, _extraData);
+    _metadata[1] = MetadataRegistry.Metadata(
       "Bob's Safety Module",
       "A sweet Safety Module",
-      "https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_92x30dp.png"
+      "https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_92x30dp.png",
+      _extraData
     );
 
     address[] memory _safetyModules = new address[](2);
@@ -84,11 +89,12 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
     address _who,
     string memory _name,
     string memory _description,
-    string memory _logo
+    string memory _logo,
+    string memory _extraData
   ) public {
     vm.assume(_who != localOwner);
-    MetadataRegistry.SafetyModuleMetadata[] memory _metadata = new MetadataRegistry.SafetyModuleMetadata[](1);
-    _metadata[0] = MetadataRegistry.SafetyModuleMetadata(_name, _description, _logo);
+    MetadataRegistry.Metadata[] memory _metadata = new MetadataRegistry.Metadata[](1);
+    _metadata[0] = MetadataRegistry.Metadata(_name, _description, _logo, _extraData);
     address[] memory _safetyModules = new address[](1);
     _safetyModules[0] = makeAddr("sm0");
     vm.mockCall(
@@ -102,7 +108,6 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
   function test_UpdateTriggerMetadata() public {
     testFuzz_UpdateTriggerMetadata(
       "Alice's Trigger",
-      "Category",
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque ac semper lectus. Ut vitae scelerisque metus. \
       Quisque congue semper purus et faucibus. Pellentesque nec justo nec metus rutrum porta in eget tellus. Mauris ornare \
       odio enim, a accumsan lacus commodo quis. Cras elementum risus in dolor ultrices, auctor commodo leo aliquet. Etiam \
@@ -110,23 +115,24 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
       congue hendrerit. Curabitur eu dui felis. Phasellus ut pulvinar erat. Proin nec nibh eu dolor cursus auctor. \
       Praesent in quam nec nisl posuere blandit. Suspendisse finibus nisi sit amet metus efficitur commodo. Vestibulum \
       ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae",
-      "https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_92x30dp.png"
+      "https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_92x30dp.png",
+      "$category: Category"
     );
   }
 
   function testFuzz_UpdateTriggerMetadata(
     string memory _name,
-    string memory _category,
     string memory _description,
-    string memory _logo
+    string memory _logo,
+    string memory _extraData
   ) public {
-    MetadataRegistry.TriggerMetadata[] memory _metadata = new MetadataRegistry.TriggerMetadata[](2);
-    _metadata[0] = MetadataRegistry.TriggerMetadata(_name, _category, _description, _logo);
-    _metadata[1] = MetadataRegistry.TriggerMetadata(
+    MetadataRegistry.Metadata[] memory _metadata = new MetadataRegistry.Metadata[](2);
+    _metadata[0] = MetadataRegistry.Metadata(_name, _description, _logo, _extraData);
+    _metadata[1] = MetadataRegistry.Metadata(
       "Bob's Trigger",
-      "Some category",
       "A sweet trigger",
-      "https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_92x30dp.png"
+      "https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_92x30dp.png",
+      "Some extra data"
     );
 
     address[] memory _triggers = new address[](2);
@@ -151,13 +157,13 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
   function testFuzz_UpdateTriggerMetadataUnauthorized(
     address _who,
     string memory _name,
-    string memory _category,
     string memory _description,
-    string memory _logo
+    string memory _logo,
+    string memory _extraData
   ) public {
     vm.assume(_who != owner && _who != boss && _who != address(0));
-    MetadataRegistry.TriggerMetadata[] memory _metadata = new MetadataRegistry.TriggerMetadata[](1);
-    _metadata[0] = MetadataRegistry.TriggerMetadata(_name, _category, _description, _logo);
+    MetadataRegistry.Metadata[] memory _metadata = new MetadataRegistry.Metadata[](1);
+    _metadata[0] = MetadataRegistry.Metadata(_name, _description, _logo, _extraData);
     address[] memory _triggers = new address[](1);
     _triggers[0] = address(triggerA);
 
