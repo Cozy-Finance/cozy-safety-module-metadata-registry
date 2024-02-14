@@ -9,6 +9,8 @@ import {ISafetyModule} from "./interfaces/ISafetyModule.sol";
  * @dev Metadata can be fetched by querying logs or configuring a subgraph to index the events.
  */
 contract MetadataRegistry {
+  address public cozyRouter;
+
   struct Metadata {
     string name;
     string description;
@@ -28,6 +30,10 @@ contract MetadataRegistry {
   /// @dev Thrown when there is a length mismatch in the provided metadata.
   error InvalidConfiguration();
 
+  constructor(address cozyRouter_) {
+    cozyRouter = cozyRouter_;
+  }
+
   /// @notice Update metadata for safety modules.
   /// @param safetyModules_ An array of safety modules to be updated.
   /// @param metadata_ An array of new metadata, mapping 1:1 with the addresses in the safetyModules_ array.
@@ -43,6 +49,15 @@ contract MetadataRegistry {
   /// @param metadata_ The new metadata for the safety module.
   function updateSafetyModuleMetadata(address safetyModule_, Metadata calldata metadata_) public {
     if (msg.sender != ISafetyModule(safetyModule_).owner()) revert Unauthorized();
+    emit SafetyModuleMetadataUpdated(safetyModule_, metadata_);
+  }
+
+  /// @notice Update metadata for a safety module. This function can be called by the CozyRouter.
+  /// @param safetyModule_ The address of the safety module.
+  /// @param metadata_ The new metadata for the safety module.
+  /// @param caller_ The address of the CozyRouter caller.
+  function updateSafetyModuleMetadata(address safetyModule_, Metadata calldata metadata_, address caller_) public {
+    if (msg.sender != cozyRouter || caller_ != ISafetyModule(safetyModule_).owner()) revert Unauthorized();
     emit SafetyModuleMetadataUpdated(safetyModule_, metadata_);
   }
 
