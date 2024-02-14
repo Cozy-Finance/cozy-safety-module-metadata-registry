@@ -9,6 +9,7 @@ import {ITrigger} from "../src/interfaces/ITrigger.sol";
 contract MetadataRegistryTestSetup is Test {
   MetadataRegistry metadataRegistry;
 
+  address cozyRouter;
   address boss;
   address owner;
   address localOwner;
@@ -20,6 +21,7 @@ contract MetadataRegistryTestSetup is Test {
   event TriggerMetadataUpdated(address indexed trigger, MetadataRegistry.Metadata metadata);
 
   function setUp() public {
+    cozyRouter = makeAddr("cozyRouter");
     boss = makeAddr("boss");
     owner = makeAddr("owner");
     localOwner = makeAddr("localOwner");
@@ -34,7 +36,7 @@ contract MetadataRegistryTestSetup is Test {
     vm.mockCall(address(triggerB), abi.encodeWithSelector(ITrigger.owner.selector), abi.encode(owner));
 
     // Deploy metadata registry.
-    metadataRegistry = new MetadataRegistry();
+    metadataRegistry = new MetadataRegistry(cozyRouter);
   }
 }
 
@@ -85,6 +87,25 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
     metadataRegistry.updateSafetyModuleMetadata(_safetyModules, _metadata);
   }
 
+  function testFuzz_UpdateSafetyModuleMetadataFromRouter(
+    string memory _name,
+    string memory _description,
+    string memory _logo,
+    string memory _extraData
+  ) public {
+    MetadataRegistry.Metadata memory _metadata = MetadataRegistry.Metadata(_name, _description, _logo, _extraData);
+
+    address _safetyModule = makeAddr("sm0");
+
+    // Mock safetyModule.owner response.
+    vm.mockCall(_safetyModule, abi.encodeWithSelector(ISafetyModule.owner.selector), abi.encode(localOwner));
+
+    vm.expectEmit(true, true, true, true);
+    emit SafetyModuleMetadataUpdated(_safetyModule, _metadata);
+    vm.prank(cozyRouter);
+    metadataRegistry.updateSafetyModuleMetadata(_safetyModule, _metadata, localOwner);
+  }
+
   function testFuzz_UpdateSafetyModuleMetadataUnauthorized(
     address _who,
     string memory _name,
@@ -103,6 +124,30 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
     vm.prank(_who);
     vm.expectRevert(MetadataRegistry.Unauthorized.selector);
     metadataRegistry.updateSafetyModuleMetadata(_safetyModules, _metadata);
+  }
+
+  function testFuzz_UpdateSafetyModuleMetadataFromRouterUnauthorized(
+    address _who,
+    string memory _name,
+    string memory _description,
+    string memory _logo,
+    string memory _extraData
+  ) public {
+    vm.assume(_who != localOwner);
+    MetadataRegistry.Metadata memory _metadata = MetadataRegistry.Metadata(_name, _description, _logo, _extraData);
+
+    address _safetyModule = makeAddr("sm0");
+
+    // Mock safetyModule.owner response.
+    vm.mockCall(_safetyModule, abi.encodeWithSelector(ISafetyModule.owner.selector), abi.encode(localOwner));
+
+    vm.prank(cozyRouter);
+    vm.expectRevert(MetadataRegistry.Unauthorized.selector);
+    metadataRegistry.updateSafetyModuleMetadata(_safetyModule, _metadata, _who); // _who must be the owner of the SM.
+
+    vm.prank(_who); // The caller must be the CozyRouter.
+    vm.expectRevert(MetadataRegistry.Unauthorized.selector);
+    metadataRegistry.updateSafetyModuleMetadata(_safetyModule, _metadata, _who);
   }
 
   function test_UpdateTriggerMetadata() public {
