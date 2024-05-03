@@ -35,7 +35,7 @@ contract Deploy is Script {
   // -------- Configuration --------
   // -------------------------------
 
-  address cozyRouter = address(0);
+  address cozyRouter = address(0xD8BC0847fd1EbfDf546ad463255E7226d573048E);
 
   // ----------------------------
   // -------- Deployment --------
