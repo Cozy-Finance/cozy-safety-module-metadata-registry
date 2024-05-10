@@ -13,10 +13,13 @@ contract MetadataRegistryTestSetup is Test {
   address boss;
   address owner;
   address localOwner;
+  address metadataRegistryOwner;
 
   address triggerA;
   address triggerB;
 
+  event CozyRouterUpdated(address indexed cozyRouter);
+  event OwnerUpdated(address indexed owner);
   event SafetyModuleMetadataUpdated(address indexed safetyModule, MetadataRegistry.Metadata metadata);
   event TriggerMetadataUpdated(address indexed trigger, MetadataRegistry.Metadata metadata);
 
@@ -25,6 +28,7 @@ contract MetadataRegistryTestSetup is Test {
     boss = makeAddr("boss");
     owner = makeAddr("owner");
     localOwner = makeAddr("localOwner");
+    metadataRegistryOwner = makeAddr("metadataRegistryOwner");
 
     triggerA = makeAddr("triggerA");
     triggerB = makeAddr("triggerB");
@@ -36,7 +40,7 @@ contract MetadataRegistryTestSetup is Test {
     vm.mockCall(address(triggerB), abi.encodeWithSelector(ITrigger.owner.selector), abi.encode(owner));
 
     // Deploy metadata registry.
-    metadataRegistry = new MetadataRegistry(cozyRouter);
+    metadataRegistry = new MetadataRegistry(metadataRegistryOwner, cozyRouter);
   }
 }
 
@@ -215,5 +219,39 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
     vm.prank(_who);
     vm.expectRevert(MetadataRegistry.Unauthorized.selector);
     metadataRegistry.updateTriggerMetadata(_triggers, _metadata);
+  }
+
+  function test_updateCozyRouter() public {
+    address _newCozyRouter = makeAddr("newCozyRouter");
+
+    vm.expectEmit(true, true, true, true);
+    emit CozyRouterUpdated(_newCozyRouter);
+    vm.prank(metadataRegistryOwner);
+    metadataRegistry.updateCozyRouter(_newCozyRouter);
+    assertEq(metadataRegistry.cozyRouter(), _newCozyRouter);
+  }
+
+  function testFuzz_updateCozyRouterUnauthorized(address _who) public {
+    vm.assume(_who != metadataRegistryOwner);
+    vm.prank(_who);
+    vm.expectRevert(MetadataRegistry.Unauthorized.selector);
+    metadataRegistry.updateCozyRouter(makeAddr("newCozyRouter"));
+  }
+
+  function test_updateOwner() public {
+    address _newOwner = makeAddr("newOwner");
+
+    vm.expectEmit(true, true, true, true);
+    emit OwnerUpdated(_newOwner);
+    vm.prank(metadataRegistryOwner);
+    metadataRegistry.updateOwner(_newOwner);
+    assertEq(metadataRegistry.owner(), _newOwner);
+  }
+
+  function testFuzz_updateOwnerUnauthorized(address _who) public {
+    vm.assume(_who != metadataRegistryOwner);
+    vm.prank(_who);
+    vm.expectRevert(MetadataRegistry.Unauthorized.selector);
+    metadataRegistry.updateOwner(makeAddr("newOwner"));
   }
 }
