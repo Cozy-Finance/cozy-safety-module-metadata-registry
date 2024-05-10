@@ -9,7 +9,11 @@ import {ISafetyModule} from "./interfaces/ISafetyModule.sol";
  * @dev Metadata can be fetched by querying logs or configuring a subgraph to index the events.
  */
 contract MetadataRegistry {
+  /// @notice The CozyRouter address used by this MetadataRegistry.
   address public cozyRouter;
+
+  /// @notice The owner of this MetadataRegistry.
+  address public owner;
 
   struct Metadata {
     string name;
@@ -17,6 +21,12 @@ contract MetadataRegistry {
     string logoURI;
     string extraData;
   }
+
+  /// @dev Emitted when the CozyRouter is updated.
+  event CozyRouterUpdated(address indexed cozyRouter);
+
+  /// @dev Emitted when the owner is updated.
+  event OwnerUpdated(address indexed owner);
 
   /// @dev Emitted when a safety module's metadata is updated.
   event SafetyModuleMetadataUpdated(address indexed safetyModule, Metadata metadata);
@@ -30,7 +40,8 @@ contract MetadataRegistry {
   /// @dev Thrown when there is a length mismatch in the provided metadata.
   error InvalidConfiguration();
 
-  constructor(address cozyRouter_) {
+  constructor(address owner_, address cozyRouter_) {
+    owner = owner_;
     cozyRouter = cozyRouter_;
   }
 
@@ -88,5 +99,22 @@ contract MetadataRegistry {
 
     if (msg.sender != boss_ && msg.sender != owner_) revert Unauthorized();
     emit TriggerMetadataUpdated(address(trigger_), metadata_);
+  }
+
+  /// @notice Update the CozyRouter address used by this MetadataRegistry.
+  /// @param cozyRouter_ The new CozyRouter address.
+  function updateCozyRouter(address cozyRouter_) external onlyOwner {
+    cozyRouter = cozyRouter_;
+    emit CozyRouterUpdated(cozyRouter_);
+  }
+
+  function updateOwner(address owner_) external onlyOwner {
+    owner = owner_;
+    emit OwnerUpdated(owner_);
+  }
+
+  modifier onlyOwner() {
+    if (msg.sender != owner) revert Unauthorized();
+    _;
   }
 }

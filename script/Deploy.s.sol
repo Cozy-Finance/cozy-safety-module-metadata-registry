@@ -8,8 +8,8 @@ import {MetadataRegistry} from "src/MetadataRegistry.sol";
 /**
  * @notice *Purpose: Local deploy, testing, and production.*
  *
- * This script deploys the Cozy MetadataRegistry. Before running this script, the cozyRouter address should be updated
- * in the configuration section of the script.
+ * This script deploys the Cozy MetadataRegistry. Before running this script, the cozyRouter and owner addresses
+ * should be updated in the configuration section of the script.
  *
  * To run this script:
  *
@@ -35,7 +35,8 @@ contract Deploy is Script {
   // -------- Configuration --------
   // -------------------------------
 
-  address cozyRouter = address(0xD8BC0847fd1EbfDf546ad463255E7226d573048E);
+  address cozyRouter = address(0x2B505d6cEcc56AB1DBDc0245831694feB51c6569);
+  address owner = address(0);
 
   // ----------------------------
   // -------- Deployment --------
@@ -43,7 +44,7 @@ contract Deploy is Script {
 
   function run() public {
     vm.broadcast();
-    MetadataRegistry metadataRegistry = new MetadataRegistry(cozyRouter);
+    MetadataRegistry metadataRegistry = new MetadataRegistry(owner, cozyRouter);
     console2.log("MetadataRegistry deployed", address(metadataRegistry));
   }
 }
