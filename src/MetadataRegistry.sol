@@ -73,7 +73,7 @@ contract MetadataRegistry {
   /// @param caller_ The address of the CozyRouter caller.
   function updateSafetyModuleMetadata(address safetyModule_, Metadata calldata metadata_, address caller_) public {
     if (msg.sender != cozyRouter || caller_ != ISafetyModule(safetyModule_).owner()) revert Unauthorized();
-    emit SharedSafetyModuleCoordinatorMetadataUpdated(safetyModule_, metadata_);
+    emit SafetyModuleMetadataUpdated(safetyModule_, metadata_);
   }
 
   /// @notice Update metadata for shared safety modules.
