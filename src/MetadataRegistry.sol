@@ -3,6 +3,7 @@ pragma solidity 0.8.22;
 
 import {ITrigger} from "./interfaces/ITrigger.sol";
 import {ISafetyModule} from "./interfaces/ISafetyModule.sol";
+import {ISharedSafetyModuleCoordinator} from "./interfaces/ISharedSafetyModuleCoordinator.sol";
 
 /**
  * @notice Emits metadata about a safety module or trigger so it can be retrieved off-chain.
@@ -30,6 +31,9 @@ contract MetadataRegistry {
 
   /// @dev Emitted when a safety module's metadata is updated.
   event SafetyModuleMetadataUpdated(address indexed safetyModule, Metadata metadata);
+
+  /// @dev Emitted when a shared safety module's metadata is updated.
+  event SharedSafetyModuleCoordinatorMetadataUpdated(address indexed sharedSafetyModuleCoordinator, Metadata metadata);
 
   /// @dev Emitted when a trigger's metadata is updated.
   event TriggerMetadataUpdated(address indexed trigger, Metadata metadata);
@@ -69,7 +73,49 @@ contract MetadataRegistry {
   /// @param caller_ The address of the CozyRouter caller.
   function updateSafetyModuleMetadata(address safetyModule_, Metadata calldata metadata_, address caller_) public {
     if (msg.sender != cozyRouter || caller_ != ISafetyModule(safetyModule_).owner()) revert Unauthorized();
-    emit SafetyModuleMetadataUpdated(safetyModule_, metadata_);
+    emit SharedSafetyModuleCoordinatorMetadataUpdated(safetyModule_, metadata_);
+  }
+
+  /// @notice Update metadata for shared safety modules.
+  /// @param sharedSafetyModuleCoordinators_ An array of shared safety modules to be updated.
+  /// @param metadata_ An array of new metadata, mapping 1:1 with the addresses in the sharedSafetyModuleCoordinators_
+  /// array.
+  function updateSharedSafetyModuleCoordinatorMetadata(
+    address[] calldata sharedSafetyModuleCoordinators_,
+    Metadata[] calldata metadata_
+  ) external {
+    if (sharedSafetyModuleCoordinators_.length != metadata_.length) revert InvalidConfiguration();
+    for (uint256 i = 0; i < sharedSafetyModuleCoordinators_.length; i++) {
+      updateSharedSafetyModuleCoordinatorMetadata(sharedSafetyModuleCoordinators_[i], metadata_[i]);
+    }
+  }
+
+  /// @notice Update metadata for a shared safety module coordinator.
+  /// @param sharedSafetyModuleCoordinator_ The address of the shared safety module coordinator.
+  /// @param metadata_ The new metadata for the shared safety module coordinator.
+  function updateSharedSafetyModuleCoordinatorMetadata(
+    address sharedSafetyModuleCoordinator_,
+    Metadata calldata metadata_
+  ) public {
+    if (!ISharedSafetyModuleCoordinator(sharedSafetyModuleCoordinator_).isActiveOwner(msg.sender)) {
+      revert Unauthorized();
+    }
+    emit SharedSafetyModuleCoordinatorMetadataUpdated(sharedSafetyModuleCoordinator_, metadata_);
+  }
+
+  /// @notice Update metadata for a shared safety module. This function can be called by the CozyRouter.
+  /// @param sharedSafetyModuleCoordinator_ The address of the shared safety module coordinator.
+  /// @param metadata_ The new metadata for the safety module.
+  /// @param caller_ The address of the CozyRouter caller.
+  function updateSharedSafetyModuleCoordinatorMetadata(
+    address sharedSafetyModuleCoordinator_,
+    Metadata calldata metadata_,
+    address caller_
+  ) public {
+    if (
+      msg.sender != cozyRouter || !ISharedSafetyModuleCoordinator(sharedSafetyModuleCoordinator_).isActiveOwner(caller_)
+    ) revert Unauthorized();
+    emit SharedSafetyModuleCoordinatorMetadataUpdated(sharedSafetyModuleCoordinator_, metadata_);
   }
 
   /// @notice Update metadata for triggers.
