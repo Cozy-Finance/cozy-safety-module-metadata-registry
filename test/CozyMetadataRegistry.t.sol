@@ -4,43 +4,50 @@ pragma solidity 0.8.22;
 import "forge-std/Test.sol";
 import {MetadataRegistry} from "../src/MetadataRegistry.sol";
 import {ISafetyModule} from "../src/interfaces/ISafetyModule.sol";
-import {ITrigger} from "../src/interfaces/ITrigger.sol";
+import {ICozySafetyModuleManager} from "../src/interfaces/ICozySafetyModuleManager.sol";
+import {MockManager} from "./MockCozySafetyModuleManager.sol";
 
 contract MetadataRegistryTestSetup is Test {
   MetadataRegistry metadataRegistry;
 
   address cozyRouter;
-  address boss;
-  address owner;
+  address cozySafetyModuleManager;
   address localOwner;
   address metadataRegistryOwner;
 
-  address triggerA;
-  address triggerB;
+  address controllerA;
+  address controllerB;
+
+  address safetyModuleA;
+  address safetyModuleB;
+  address safetyModuleAOwner;
+  address safetyModuleBOwner;
 
   event CozyRouterUpdated(address indexed cozyRouter);
+  event CozySafetyModuleManagerUpdated(address indexed cozySafetyModuleManager);
   event OwnerUpdated(address indexed owner);
   event SafetyModuleMetadataUpdated(address indexed safetyModule, MetadataRegistry.Metadata metadata);
-  event TriggerMetadataUpdated(address indexed trigger, MetadataRegistry.Metadata metadata);
+  event ControllerMetadataUpdated(address indexed controller, MetadataRegistry.Metadata metadata);
 
   function setUp() public {
     cozyRouter = makeAddr("cozyRouter");
-    boss = makeAddr("boss");
-    owner = makeAddr("owner");
     localOwner = makeAddr("localOwner");
     metadataRegistryOwner = makeAddr("metadataRegistryOwner");
 
-    triggerA = makeAddr("triggerA");
-    triggerB = makeAddr("triggerB");
+    controllerA = makeAddr("controllerA");
+    controllerB = makeAddr("controllerB");
 
-    // Mock trigger responses.
-    vm.mockCall(address(triggerA), abi.encodeWithSelector(ITrigger.boss.selector), abi.encode(boss));
-    vm.mockCall(address(triggerB), abi.encodeWithSelector(ITrigger.boss.selector), abi.encode(boss));
-    vm.mockCall(address(triggerA), abi.encodeWithSelector(ITrigger.owner.selector), abi.encode(owner));
-    vm.mockCall(address(triggerB), abi.encodeWithSelector(ITrigger.owner.selector), abi.encode(owner));
+    MockManager mockManager_ = new MockManager();
+    cozySafetyModuleManager = address(mockManager_);
+
+    // Mock manager responses.
+    mockManager_.setControllerRegistry(controllerA, ISafetyModule(safetyModuleA));
+    mockManager_.setControllerRegistry(controllerB, ISafetyModule(safetyModuleB));
+    vm.mockCall(safetyModuleA, abi.encodeWithSelector(ISafetyModule.owner.selector), abi.encode(safetyModuleAOwner));
+    vm.mockCall(safetyModuleB, abi.encodeWithSelector(ISafetyModule.owner.selector), abi.encode(safetyModuleBOwner));
 
     // Deploy metadata registry.
-    metadataRegistry = new MetadataRegistry(metadataRegistryOwner, cozyRouter);
+    metadataRegistry = new MetadataRegistry(metadataRegistryOwner, cozyRouter, cozySafetyModuleManager);
   }
 }
 
@@ -154,9 +161,9 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
     metadataRegistry.updateSafetyModuleMetadata(_safetyModule, _metadata, _who);
   }
 
-  function test_UpdateTriggerMetadata() public {
-    testFuzz_UpdateTriggerMetadata(
-      "Alice's Trigger",
+  function test_UpdateControllerMetadata() public {
+    testFuzz_UpdateControllerMetadata(
+      "Alice's Controller",
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque ac semper lectus. Ut vitae scelerisque metus. \
       Quisque congue semper purus et faucibus. Pellentesque nec justo nec metus rutrum porta in eget tellus. Mauris ornare \
       odio enim, a accumsan lacus commodo quis. Cras elementum risus in dolor ultrices, auctor commodo leo aliquet. Etiam \
@@ -165,60 +172,53 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
       Praesent in quam nec nisl posuere blandit. Suspendisse finibus nisi sit amet metus efficitur commodo. Vestibulum \
       ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae",
       "https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_92x30dp.png",
-      "$category: Category"
+      "$category: Category",
+      1
     );
   }
 
-  function testFuzz_UpdateTriggerMetadata(
+  function testFuzz_UpdateControllerMetadata(
     string memory _name,
     string memory _description,
     string memory _logo,
-    string memory _extraData
+    string memory _extraData,
+    uint8 _rand
   ) public {
-    MetadataRegistry.Metadata[] memory _metadata = new MetadataRegistry.Metadata[](2);
+    MetadataRegistry.Metadata[] memory _metadata = new MetadataRegistry.Metadata[](1);
     _metadata[0] = MetadataRegistry.Metadata(_name, _description, _logo, _extraData);
-    _metadata[1] = MetadataRegistry.Metadata(
-      "Bob's Trigger",
-      "A sweet trigger",
-      "https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_92x30dp.png",
-      "Some extra data"
-    );
 
-    address[] memory _triggers = new address[](2);
-    _triggers[0] = address(triggerA);
-    _triggers[1] = address(triggerB);
+    address[] memory _controllers = new address[](1);
+    address _selectedController = (_rand % 2 == 0) ? controllerA : controllerB;
+    address _selectedSafetyModuleOwner = (_rand % 2 == 0) ? safetyModuleAOwner : safetyModuleBOwner;
+    _controllers[0] = _selectedController;
 
     vm.expectEmit(true, true, true, true);
-    emit TriggerMetadataUpdated(address(triggerA), _metadata[0]);
-    vm.expectEmit(true, true, true, true);
-    emit TriggerMetadataUpdated(address(triggerB), _metadata[1]);
-    vm.prank(boss);
-    metadataRegistry.updateTriggerMetadata(_triggers, _metadata);
+    emit ControllerMetadataUpdated(_selectedController, _metadata[0]);
+    vm.prank(_selectedSafetyModuleOwner);
+    metadataRegistry.updateControllerMetadata(_controllers, _metadata);
 
     vm.expectEmit(true, true, true, true);
-    emit TriggerMetadataUpdated(address(triggerA), _metadata[0]);
-    vm.expectEmit(true, true, true, true);
-    emit TriggerMetadataUpdated(address(triggerB), _metadata[1]);
-    vm.prank(owner);
-    metadataRegistry.updateTriggerMetadata(_triggers, _metadata);
+    emit ControllerMetadataUpdated(address(_selectedController), _metadata[0]);
+    vm.prank(_selectedSafetyModuleOwner);
+    metadataRegistry.updateControllerMetadata(_controllers, _metadata);
   }
 
-  function testFuzz_UpdateTriggerMetadataUnauthorized(
+  function testFuzz_UpdateControllerMetadataUnauthorized(
     address _who,
     string memory _name,
     string memory _description,
     string memory _logo,
     string memory _extraData
   ) public {
-    vm.assume(_who != owner && _who != boss && _who != address(0));
+    vm.assume(_who != safetyModuleAOwner);
     MetadataRegistry.Metadata[] memory _metadata = new MetadataRegistry.Metadata[](1);
     _metadata[0] = MetadataRegistry.Metadata(_name, _description, _logo, _extraData);
-    address[] memory _triggers = new address[](1);
-    _triggers[0] = address(triggerA);
+    address[] memory _controllers = new address[](1);
+    _controllers[0] = address(controllerA);
 
     vm.prank(_who);
     vm.expectRevert(MetadataRegistry.Unauthorized.selector);
-    metadataRegistry.updateTriggerMetadata(_triggers, _metadata);
+    metadataRegistry.updateControllerMetadata(_controllers, _metadata);
   }
 
   function test_updateCozyRouter() public {
@@ -236,6 +236,23 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
     vm.prank(_who);
     vm.expectRevert(MetadataRegistry.Unauthorized.selector);
     metadataRegistry.updateCozyRouter(makeAddr("newCozyRouter"));
+  }
+
+  function test_updateCozySafetyModuleManager() public {
+    address _newCozySafetyModuleManager = makeAddr("newCozySafetyModuleManager");
+
+    vm.expectEmit(true, true, true, true);
+    emit CozySafetyModuleManagerUpdated(_newCozySafetyModuleManager);
+    vm.prank(metadataRegistryOwner);
+    metadataRegistry.updateCozySafetyModuleManager(_newCozySafetyModuleManager);
+    assertEq(metadataRegistry.cozySafetyModuleManager(), _newCozySafetyModuleManager);
+  }
+
+  function testFuzz_updateCozySafetyModuleManagerUnauthorized(address _who) public {
+    vm.assume(_who != metadataRegistryOwner);
+    vm.prank(_who);
+    vm.expectRevert(MetadataRegistry.Unauthorized.selector);
+    metadataRegistry.updateCozySafetyModuleManager(makeAddr("newCozySafetyModuleManager"));
   }
 
   function test_updateOwner() public {
