@@ -128,7 +128,7 @@ contract MetadataRegistry {
 
   /// @notice Update metadata for controllers.
   /// @param controllers_ An array of controllers to be updated.
-  /// @param metadata_ An array of new metadata, mapping 1:1 with the addresses in the triggers_ array.
+  /// @param metadata_ An array of new metadata, mapping 1:1 with the addresses in the controllers_ array.
   function updateControllerMetadata(address[] calldata controllers_, Metadata[] calldata metadata_) external {
     if (controllers_.length != metadata_.length) revert InvalidConfiguration();
     for (uint256 i = 0; i < controllers_.length; i++) {
