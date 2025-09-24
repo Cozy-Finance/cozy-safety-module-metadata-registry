@@ -49,7 +49,7 @@ contract UpdateMetadata is Script {
     controllers_[0] = 0x0000000000000000000000000000000000000000;
     controllers_[1] = 0x0000000000000000000000000000000000000000;
 
-    // This array should map 1:1 with the controllers_s array.
+    // This array should map 1:1 with the controllers_ array.
     MetadataRegistry.Metadata[] memory controllerMetadata_ = new MetadataRegistry.Metadata[](2);
     controllerMetadata_[0] = MetadataRegistry.Metadata(
       "Mock Hop", "Bridge", "Mock Bridge Protection", "https://cryptologos.cc/logos/terra-luna-luna-logo.png"
