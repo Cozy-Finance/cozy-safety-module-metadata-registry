@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.22;
 
-import {ITrigger} from "./interfaces/ITrigger.sol";
+import {ISafetyModuleController} from "./interfaces/ISafetyModuleController.sol";
 import {ISafetyModule} from "./interfaces/ISafetyModule.sol";
 import {ISharedSafetyModuleCoordinator} from "./interfaces/ISharedSafetyModuleCoordinator.sol";
 
@@ -35,8 +35,8 @@ contract MetadataRegistry {
   /// @dev Emitted when a shared safety module's metadata is updated.
   event SharedSafetyModuleCoordinatorMetadataUpdated(address indexed sharedSafetyModuleCoordinator, Metadata metadata);
 
-  /// @dev Emitted when a trigger's metadata is updated.
-  event TriggerMetadataUpdated(address indexed trigger, Metadata metadata);
+  /// @dev Emitted when a controller's metadata is updated.
+  event ControllerMetadataUpdated(address indexed controller, Metadata metadata);
 
   /// @dev Thrown when the caller is not authorized to perform the action.
   error Unauthorized();
@@ -118,33 +118,33 @@ contract MetadataRegistry {
     emit SharedSafetyModuleCoordinatorMetadataUpdated(sharedSafetyModuleCoordinator_, metadata_);
   }
 
-  /// @notice Update metadata for triggers.
-  /// @param triggers_ An array of triggers to be updated.
+  /// @notice Update metadata for controllers.
+  /// @param controllers_ An array of controllers to be updated.
   /// @param metadata_ An array of new metadata, mapping 1:1 with the addresses in the triggers_ array.
-  function updateTriggerMetadata(address[] calldata triggers_, Metadata[] calldata metadata_) external {
-    if (triggers_.length != metadata_.length) revert InvalidConfiguration();
-    for (uint256 i = 0; i < triggers_.length; i++) {
-      updateTriggerMetadata(triggers_[i], metadata_[i]);
+  function updateControllerMetadata(address[] calldata controllers_, Metadata[] calldata metadata_) external {
+    if (controllers_.length != metadata_.length) revert InvalidConfiguration();
+    for (uint256 i = 0; i < controllers_.length; i++) {
+      updateControllerMetadata(controllers_[i], metadata_[i]);
     }
   }
 
-  /// @notice Update metadata for a trigger.
-  /// @param trigger_ The address of the trigger.
-  /// @param metadata_ The new metadata for the trigger.
-  function updateTriggerMetadata(address trigger_, Metadata calldata metadata_) public {
+  /// @notice Update metadata for a controller.
+  /// @param controller_ The address of the controller.
+  /// @param metadata_ The new metadata for the controller.
+  function updateControllerMetadata(address controller_, Metadata calldata metadata_) public {
     address boss_ = address(0);
     address owner_ = address(0);
 
-    try ITrigger(trigger_).boss() returns (address result_) {
+    try ISafetyModuleController(controller_).boss() returns (address result_) {
       boss_ = result_;
     } catch {}
 
-    try ITrigger(trigger_).owner() returns (address result_) {
+    try ISafetyModuleController(controller_).owner() returns (address result_) {
       owner_ = result_;
     } catch {}
 
     if (msg.sender != boss_ && msg.sender != owner_) revert Unauthorized();
-    emit TriggerMetadataUpdated(address(trigger_), metadata_);
+    emit ControllerMetadataUpdated(address(controller_), metadata_);
   }
 
   /// @notice Update the CozyRouter address used by this MetadataRegistry.

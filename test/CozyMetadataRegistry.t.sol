@@ -4,7 +4,7 @@ pragma solidity 0.8.22;
 import "forge-std/Test.sol";
 import {MetadataRegistry} from "../src/MetadataRegistry.sol";
 import {ISafetyModule} from "../src/interfaces/ISafetyModule.sol";
-import {ITrigger} from "../src/interfaces/ITrigger.sol";
+import {ISafetyModuleController} from "../src/interfaces/ISafetyModuleController.sol";
 
 contract MetadataRegistryTestSetup is Test {
   MetadataRegistry metadataRegistry;
@@ -15,13 +15,13 @@ contract MetadataRegistryTestSetup is Test {
   address localOwner;
   address metadataRegistryOwner;
 
-  address triggerA;
-  address triggerB;
+  address controllerA;
+  address controllerB;
 
   event CozyRouterUpdated(address indexed cozyRouter);
   event OwnerUpdated(address indexed owner);
   event SafetyModuleMetadataUpdated(address indexed safetyModule, MetadataRegistry.Metadata metadata);
-  event TriggerMetadataUpdated(address indexed trigger, MetadataRegistry.Metadata metadata);
+  event ControllerMetadataUpdated(address indexed controller, MetadataRegistry.Metadata metadata);
 
   function setUp() public {
     cozyRouter = makeAddr("cozyRouter");
@@ -30,14 +30,14 @@ contract MetadataRegistryTestSetup is Test {
     localOwner = makeAddr("localOwner");
     metadataRegistryOwner = makeAddr("metadataRegistryOwner");
 
-    triggerA = makeAddr("triggerA");
-    triggerB = makeAddr("triggerB");
+    controllerA = makeAddr("controllerA");
+    controllerB = makeAddr("controllerB");
 
-    // Mock trigger responses.
-    vm.mockCall(address(triggerA), abi.encodeWithSelector(ITrigger.boss.selector), abi.encode(boss));
-    vm.mockCall(address(triggerB), abi.encodeWithSelector(ITrigger.boss.selector), abi.encode(boss));
-    vm.mockCall(address(triggerA), abi.encodeWithSelector(ITrigger.owner.selector), abi.encode(owner));
-    vm.mockCall(address(triggerB), abi.encodeWithSelector(ITrigger.owner.selector), abi.encode(owner));
+    // Mock controller responses.
+    vm.mockCall(address(controllerA), abi.encodeWithSelector(ISafetyModuleController.boss.selector), abi.encode(boss));
+    vm.mockCall(address(controllerB), abi.encodeWithSelector(ISafetyModuleController.boss.selector), abi.encode(boss));
+    vm.mockCall(address(controllerA), abi.encodeWithSelector(ISafetyModuleController.owner.selector), abi.encode(owner));
+    vm.mockCall(address(controllerB), abi.encodeWithSelector(ISafetyModuleController.owner.selector), abi.encode(owner));
 
     // Deploy metadata registry.
     metadataRegistry = new MetadataRegistry(metadataRegistryOwner, cozyRouter);
@@ -154,9 +154,9 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
     metadataRegistry.updateSafetyModuleMetadata(_safetyModule, _metadata, _who);
   }
 
-  function test_UpdateTriggerMetadata() public {
-    testFuzz_UpdateTriggerMetadata(
-      "Alice's Trigger",
+  function test_UpdateControllerMetadata() public {
+    testFuzz_UpdateControllerMetadata(
+      "Alice's Controller",
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque ac semper lectus. Ut vitae scelerisque metus. \
       Quisque congue semper purus et faucibus. Pellentesque nec justo nec metus rutrum porta in eget tellus. Mauris ornare \
       odio enim, a accumsan lacus commodo quis. Cras elementum risus in dolor ultrices, auctor commodo leo aliquet. Etiam \
@@ -169,7 +169,7 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
     );
   }
 
-  function testFuzz_UpdateTriggerMetadata(
+  function testFuzz_UpdateControllerMetadata(
     string memory _name,
     string memory _description,
     string memory _logo,
@@ -178,32 +178,32 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
     MetadataRegistry.Metadata[] memory _metadata = new MetadataRegistry.Metadata[](2);
     _metadata[0] = MetadataRegistry.Metadata(_name, _description, _logo, _extraData);
     _metadata[1] = MetadataRegistry.Metadata(
-      "Bob's Trigger",
-      "A sweet trigger",
+      "Bob's Controller",
+      "A sweet controller",
       "https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_92x30dp.png",
       "Some extra data"
     );
 
-    address[] memory _triggers = new address[](2);
-    _triggers[0] = address(triggerA);
-    _triggers[1] = address(triggerB);
+    address[] memory _controllers = new address[](2);
+    _controllers[0] = address(controllerA);
+    _controllers[1] = address(controllerB);
 
     vm.expectEmit(true, true, true, true);
-    emit TriggerMetadataUpdated(address(triggerA), _metadata[0]);
+    emit ControllerMetadataUpdated(address(controllerA), _metadata[0]);
     vm.expectEmit(true, true, true, true);
-    emit TriggerMetadataUpdated(address(triggerB), _metadata[1]);
+    emit ControllerMetadataUpdated(address(controllerB), _metadata[1]);
     vm.prank(boss);
-    metadataRegistry.updateTriggerMetadata(_triggers, _metadata);
+    metadataRegistry.updateControllerMetadata(_controllers, _metadata);
 
     vm.expectEmit(true, true, true, true);
-    emit TriggerMetadataUpdated(address(triggerA), _metadata[0]);
+    emit ControllerMetadataUpdated(address(controllerA), _metadata[0]);
     vm.expectEmit(true, true, true, true);
-    emit TriggerMetadataUpdated(address(triggerB), _metadata[1]);
+    emit ControllerMetadataUpdated(address(controllerB), _metadata[1]);
     vm.prank(owner);
-    metadataRegistry.updateTriggerMetadata(_triggers, _metadata);
+    metadataRegistry.updateControllerMetadata(_controllers, _metadata);
   }
 
-  function testFuzz_UpdateTriggerMetadataUnauthorized(
+  function testFuzz_UpdateControllerMetadataUnauthorized(
     address _who,
     string memory _name,
     string memory _description,
@@ -213,12 +213,12 @@ contract MetadataRegistryTest is MetadataRegistryTestSetup {
     vm.assume(_who != owner && _who != boss && _who != address(0));
     MetadataRegistry.Metadata[] memory _metadata = new MetadataRegistry.Metadata[](1);
     _metadata[0] = MetadataRegistry.Metadata(_name, _description, _logo, _extraData);
-    address[] memory _triggers = new address[](1);
-    _triggers[0] = address(triggerA);
+    address[] memory _controllers = new address[](1);
+    _controllers[0] = address(controllerA);
 
     vm.prank(_who);
     vm.expectRevert(MetadataRegistry.Unauthorized.selector);
-    metadataRegistry.updateTriggerMetadata(_triggers, _metadata);
+    metadataRegistry.updateControllerMetadata(_controllers, _metadata);
   }
 
   function test_updateCozyRouter() public {
