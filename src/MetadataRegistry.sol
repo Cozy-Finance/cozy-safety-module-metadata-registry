@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.22;
 
-import {ISafetyModuleController} from "./interfaces/ISafetyModuleController.sol";
 import {ISafetyModule} from "./interfaces/ISafetyModule.sol";
 import {ISharedSafetyModuleCoordinator} from "./interfaces/ISharedSafetyModuleCoordinator.sol";
 import {ICozySafetyModuleManager} from "./interfaces/ICozySafetyModuleManager.sol";
@@ -140,11 +139,9 @@ contract MetadataRegistry {
   /// @param controller_ The address of the controller.
   /// @param metadata_ The new metadata for the controller.
   function updateControllerMetadata(address controller_, Metadata calldata metadata_) public {
-    if (
-      msg.sender
-        != ICozySafetyModuleManager(cozySafetyModuleManager).controllerRegistry(ISafetyModuleController(controller_))
-          .owner()
-    ) revert Unauthorized();
+    if (msg.sender != ICozySafetyModuleManager(cozySafetyModuleManager).controllerRegistry(controller_).owner()) {
+      revert Unauthorized();
+    }
     emit ControllerMetadataUpdated(controller_, metadata_);
   }
 
@@ -155,9 +152,7 @@ contract MetadataRegistry {
   function updateControllerMetadata(address controller_, Metadata calldata metadata_, address caller_) public {
     if (
       msg.sender != cozyRouter
-        || caller_
-          != ICozySafetyModuleManager(cozySafetyModuleManager).controllerRegistry(ISafetyModuleController(controller_))
-            .owner()
+        || caller_ != ICozySafetyModuleManager(cozySafetyModuleManager).controllerRegistry(controller_).owner()
     ) revert Unauthorized();
     emit ControllerMetadataUpdated(controller_, metadata_);
   }

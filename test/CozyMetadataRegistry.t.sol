@@ -4,7 +4,6 @@ pragma solidity 0.8.22;
 import "forge-std/Test.sol";
 import {MetadataRegistry} from "../src/MetadataRegistry.sol";
 import {ISafetyModule} from "../src/interfaces/ISafetyModule.sol";
-import {ISafetyModuleController} from "../src/interfaces/ISafetyModuleController.sol";
 import {ICozySafetyModuleManager} from "../src/interfaces/ICozySafetyModuleManager.sol";
 import {MockManager} from "./MockCozySafetyModuleManager.sol";
 
@@ -42,8 +41,8 @@ contract MetadataRegistryTestSetup is Test {
     cozySafetyModuleManager = address(mockManager_);
 
     // Mock manager responses.
-    mockManager_.setControllerRegistry(ISafetyModuleController(controllerA), ISafetyModule(safetyModuleA));
-    mockManager_.setControllerRegistry(ISafetyModuleController(controllerB), ISafetyModule(safetyModuleB));
+    mockManager_.setControllerRegistry(controllerA, ISafetyModule(safetyModuleA));
+    mockManager_.setControllerRegistry(controllerB, ISafetyModule(safetyModuleB));
     vm.mockCall(safetyModuleA, abi.encodeWithSelector(ISafetyModule.owner.selector), abi.encode(safetyModuleAOwner));
     vm.mockCall(safetyModuleB, abi.encodeWithSelector(ISafetyModule.owner.selector), abi.encode(safetyModuleBOwner));
 

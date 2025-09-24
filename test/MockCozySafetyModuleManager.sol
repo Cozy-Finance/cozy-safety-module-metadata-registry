@@ -2,13 +2,12 @@
 pragma solidity 0.8.22;
 
 import {ICozySafetyModuleManager} from "src/interfaces/ICozySafetyModuleManager.sol";
-import {ISafetyModuleController} from "src/interfaces/ISafetyModuleController.sol";
 import {ISafetyModule} from "src/interfaces/ISafetyModule.sol";
 
 contract MockManager is ICozySafetyModuleManager {
-  mapping(ISafetyModuleController => ISafetyModule) public controllerRegistry;
+  mapping(address => ISafetyModule) public controllerRegistry;
 
-  function setControllerRegistry(ISafetyModuleController controller_, ISafetyModule safetyModule_) external {
+  function setControllerRegistry(address controller_, ISafetyModule safetyModule_) external {
     controllerRegistry[controller_] = safetyModule_;
   }
 }
