@@ -36,6 +36,7 @@ contract Deploy is Script {
   // -------------------------------
 
   address cozyRouter = address(0xbE3015da29C76760458D8a17E656C9B225b7Ab62);
+  address cozySafetyModuleManager = address(0x1b8F0B53D1c352B3E774e3f5C9F8E28F19CdCD7b);
   address owner = address(0x1b8F0B53D1c352B3E774e3f5C9F8E28F19CdCD7b);
 
   // ----------------------------
@@ -46,7 +47,7 @@ contract Deploy is Script {
     console2.log("Assigned CozyRouter", cozyRouter);
     console2.log("Owner", owner);
     vm.broadcast();
-    MetadataRegistry metadataRegistry = new MetadataRegistry(owner, cozyRouter);
+    MetadataRegistry metadataRegistry = new MetadataRegistry(owner, cozyRouter, cozySafetyModuleManager);
     console2.log("MetadataRegistry deployed", address(metadataRegistry));
   }
 }

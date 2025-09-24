@@ -4,6 +4,7 @@ pragma solidity 0.8.22;
 import {ISafetyModuleController} from "./interfaces/ISafetyModuleController.sol";
 import {ISafetyModule} from "./interfaces/ISafetyModule.sol";
 import {ISharedSafetyModuleCoordinator} from "./interfaces/ISharedSafetyModuleCoordinator.sol";
+import {ICozySafetyModuleManager} from "./interfaces/ICozySafetyModuleManager.sol";
 
 /**
  * @notice Emits metadata about a safety module or trigger so it can be retrieved off-chain.
@@ -12,6 +13,9 @@ import {ISharedSafetyModuleCoordinator} from "./interfaces/ISharedSafetyModuleCo
 contract MetadataRegistry {
   /// @notice The CozyRouter address used by this MetadataRegistry.
   address public cozyRouter;
+
+  /// @notice The CozySafetyModuleManager address used by this MetadataRegistry.
+  address public cozySafetyModuleManager;
 
   /// @notice The owner of this MetadataRegistry.
   address public owner;
@@ -25,6 +29,9 @@ contract MetadataRegistry {
 
   /// @dev Emitted when the CozyRouter is updated.
   event CozyRouterUpdated(address indexed cozyRouter);
+
+  /// @dev Emitted when the CozySafetyModuleManager is updated.
+  event CozySafetyModuleManagerUpdated(address indexed cozySafetyModuleManager);
 
   /// @dev Emitted when the owner is updated.
   event OwnerUpdated(address indexed owner);
@@ -44,9 +51,10 @@ contract MetadataRegistry {
   /// @dev Thrown when there is a length mismatch in the provided metadata.
   error InvalidConfiguration();
 
-  constructor(address owner_, address cozyRouter_) {
+  constructor(address owner_, address cozyRouter_, address cozySafetyModuleManager_) {
     owner = owner_;
     cozyRouter = cozyRouter_;
+    cozySafetyModuleManager = cozySafetyModuleManager_;
   }
 
   /// @notice Update metadata for safety modules.
@@ -132,19 +140,26 @@ contract MetadataRegistry {
   /// @param controller_ The address of the controller.
   /// @param metadata_ The new metadata for the controller.
   function updateControllerMetadata(address controller_, Metadata calldata metadata_) public {
-    address boss_ = address(0);
-    address owner_ = address(0);
+    if (
+      msg.sender
+        != ICozySafetyModuleManager(cozySafetyModuleManager).controllerRegistry(ISafetyModuleController(controller_))
+          .owner()
+    ) revert Unauthorized();
+    emit ControllerMetadataUpdated(controller_, metadata_);
+  }
 
-    try ISafetyModuleController(controller_).boss() returns (address result_) {
-      boss_ = result_;
-    } catch {}
-
-    try ISafetyModuleController(controller_).owner() returns (address result_) {
-      owner_ = result_;
-    } catch {}
-
-    if (msg.sender != boss_ && msg.sender != owner_) revert Unauthorized();
-    emit ControllerMetadataUpdated(address(controller_), metadata_);
+  /// @notice Update metadata for a controller. This function can be called by the CozyRouter.
+  /// @param controller_ The address of the controller.
+  /// @param metadata_ The new metadata for the controller.
+  /// @param caller_ The address of the CozyRouter caller.
+  function updateControllerMetadata(address controller_, Metadata calldata metadata_, address caller_) public {
+    if (
+      msg.sender != cozyRouter
+        || caller_
+          != ICozySafetyModuleManager(cozySafetyModuleManager).controllerRegistry(ISafetyModuleController(controller_))
+            .owner()
+    ) revert Unauthorized();
+    emit ControllerMetadataUpdated(controller_, metadata_);
   }
 
   /// @notice Update the CozyRouter address used by this MetadataRegistry.
@@ -152,6 +167,13 @@ contract MetadataRegistry {
   function updateCozyRouter(address cozyRouter_) external onlyOwner {
     cozyRouter = cozyRouter_;
     emit CozyRouterUpdated(cozyRouter_);
+  }
+
+  /// @notice Update the CozySafetyModuleManager address used by this MetadataRegistry.
+  /// @param cozySafetyModuleManager_ The new CozySafetyModuleManager address.
+  function updateCozySafetyModuleManager(address cozySafetyModuleManager_) external onlyOwner {
+    cozySafetyModuleManager = cozySafetyModuleManager_;
+    emit CozySafetyModuleManagerUpdated(cozySafetyModuleManager_);
   }
 
   function updateOwner(address owner_) external onlyOwner {

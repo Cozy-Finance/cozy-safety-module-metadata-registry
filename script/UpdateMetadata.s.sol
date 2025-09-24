@@ -5,7 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {MetadataRegistry} from "../src/MetadataRegistry.sol";
 
 /**
- * @notice Update the metadata for safety modules and triggers.
+ * @notice Update the metadata for safety modules and controllers.
  * @dev Update the Configuration section below before running this script.
  */
 contract UpdateMetadata is Script {
@@ -18,9 +18,9 @@ contract UpdateMetadata is Script {
 
     // Flags to specify which update transactions should be executed.
     // NOTE: If both flags are true, the private key being used to run this script must be
-    // authorized to update metadata for all configured safety modules and triggers.
+    // authorized to update metadata for all configured safety modules and controllers.
     bool updateSafetyModuleMetadata = true;
-    bool updateTriggerMetadata = true;
+    bool updateControllerMetadata = true;
 
     // -------- SafetyModule Metadata --------
 
@@ -43,18 +43,18 @@ contract UpdateMetadata is Script {
       ""
     );
 
-    // -------- Trigger Metadata --------
+    // -------- Controller Metadata --------
 
-    address[] memory triggers_ = new address[](2);
-    triggers_[0] = 0x0000000000000000000000000000000000000000;
-    triggers_[1] = 0x0000000000000000000000000000000000000000;
+    address[] memory controllers_ = new address[](2);
+    controllers_[0] = 0x0000000000000000000000000000000000000000;
+    controllers_[1] = 0x0000000000000000000000000000000000000000;
 
-    // This array should map 1:1 with the triggers_ array.
-    MetadataRegistry.Metadata[] memory triggerMetadata_ = new MetadataRegistry.Metadata[](2);
-    triggerMetadata_[0] = MetadataRegistry.Metadata(
+    // This array should map 1:1 with the controllers_s array.
+    MetadataRegistry.Metadata[] memory controllerMetadata_ = new MetadataRegistry.Metadata[](2);
+    controllerMetadata_[0] = MetadataRegistry.Metadata(
       "Mock Hop", "Bridge", "Mock Bridge Protection", "https://cryptologos.cc/logos/terra-luna-luna-logo.png"
     );
-    triggerMetadata_[1] = MetadataRegistry.Metadata(
+    controllerMetadata_[1] = MetadataRegistry.Metadata(
       "Mock Compound Finance",
       "Lending",
       "Mock Protocol Protection",
@@ -70,9 +70,9 @@ contract UpdateMetadata is Script {
       metadataRegistry.updateSafetyModuleMetadata(safetyModules_, safetyModuleMetadata_);
     }
 
-    if (updateTriggerMetadata) {
+    if (updateControllerMetadata) {
       vm.broadcast();
-      metadataRegistry.updateTriggerMetadata(triggers_, triggerMetadata_);
+      metadataRegistry.updateControllerMetadata(controllers_, controllerMetadata_);
     }
   }
 }
